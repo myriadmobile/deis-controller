@@ -1,4 +1,4 @@
-FROM quay.io/deis/base:v0.3.6
+FROM myriadmobile/deis-docker-base:v0.3.10
 
 RUN adduser --system \
 	--shell /bin/bash \
@@ -9,7 +9,7 @@ RUN adduser --system \
 
 COPY requirements.txt /app/requirements.txt
 
-RUN buildDeps='gcc libffi-dev libpq-dev libldap2-dev libsasl2-dev python3-dev python3-pip python3-wheel python3-setuptools'; \
+RUN buildDeps='gcc libffi-dev libpq-dev libldap2-dev libsasl2-dev python3-dev python3-pip python3-wheel python3-setuptools libdpkg-perl'; \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         $buildDeps \
@@ -18,7 +18,8 @@ RUN buildDeps='gcc libffi-dev libpq-dev libldap2-dev libsasl2-dev python3-dev py
         libldap-2.4 \
         python3-minimal \
         # cryptography package needs pkg_resources
-        python3-pkg-resources && \
+        python3-pkg-resources \
+        python3-distutils && \
     ln -s /usr/bin/python3 /usr/bin/python && \
     mkdir -p /configs && chown -R deis:deis /configs && \
     pip3 install --disable-pip-version-check --no-cache-dir -r /app/requirements.txt && \
@@ -27,8 +28,8 @@ RUN buildDeps='gcc libffi-dev libpq-dev libldap2-dev libsasl2-dev python3-dev py
     apt-get autoremove -y && \
     apt-get clean -y && \
     # package up license files if any by appending to existing tar
-    COPYRIGHT_TAR='/usr/share/copyrights.tar'; \
-    gunzip -f $COPYRIGHT_TAR.gz; tar -rf $COPYRIGHT_TAR /usr/share/doc/*/copyright; gzip $COPYRIGHT_TAR && \
+    #COPYRIGHT_TAR='/usr/share/copyrights.tar'; \
+    #gunzip -f $COPYRIGHT_TAR.gz; tar -rf $COPYRIGHT_TAR /usr/share/doc/*/copyright; gzip $COPYRIGHT_TAR && \
     rm -rf \
         /usr/share/doc \
         /usr/share/man \
