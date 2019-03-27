@@ -71,6 +71,7 @@ class App(UuidAuditedModel):
                           validators=[validate_app_id,
                                       validate_reserved_names])
     structure = JSONField(default={}, blank=True, validators=[validate_app_structure])
+    procfile_structure = JSONField(default={}, blank=True, validators=[validate_app_structure])
 
     class Meta:
         verbose_name = 'Application'
@@ -408,6 +409,7 @@ class App(UuidAuditedModel):
         if new_structure != self.structure:
             # save new structure to the database
             self.structure = new_structure
+            self.procfile_structure = release.build.procfile
             self.save()
 
             try:
@@ -474,6 +476,7 @@ class App(UuidAuditedModel):
         # set processes structure to default if app is new.
         if self.structure == {}:
             self.structure = self._default_structure(release)
+            self.procfile_structure = self._default_structure(release)
             self.save()
         # reset canonical process types if build type has changed.
         else:
@@ -489,7 +492,17 @@ class App(UuidAuditedModel):
                     # update with the default process type.
                     structure.update(self._default_structure(release))
                     self.structure = structure
+                    # if procfile structure exists then we use it
+                    if release.build.procfile and \
+                       release.build.sha and not \
+                       release.build.dockerfile:
+                        self.procfile_structure = release.build.procfile
                     self.save()
+
+        # always set the procfile structure for any new release
+        if release.build.procfile:
+            self.procfile_structure = release.build.procfile
+            self.save()
 
         # deploy application to k8s. Also handles initial scaling
         app_settings = self.appsettings_set.latest()
@@ -510,8 +523,12 @@ class App(UuidAuditedModel):
             # create the application config in k8s (secret in this case) for all deploy objects
             self.set_application_config(release)
             # only buildpack apps need access to object storage
+            # only docker apps need check access to the image, so users can't exploit the k8s
+            # image cache to gain access to other users' images
             if release.build.type == 'buildpack':
                 self.create_object_store_secret()
+            else:
+                release.check_image_access()
 
             # gather all proc types to be deployed
             tasks = [
@@ -879,6 +896,10 @@ class App(UuidAuditedModel):
             self._scheduler.svc.update(self.id, self.id, data=old_service)
             raise ServiceUnavailable(str(e)) from e
 
+        # set maintenance mode for services
+        for svc in self.service_set.all():
+            svc.maintenance_mode(mode)
+
     def routable(self, routable):
         """
         Turn on/off if an application is publically routable
@@ -1086,12 +1107,15 @@ class App(UuidAuditedModel):
             'app_type': process_type,
             'build_type': release.build.type,
             'healthcheck': healthcheck,
+            'lifecycle_post_start': config.lifecycle_post_start,
+            'lifecycle_pre_stop': config.lifecycle_pre_stop,
             'routable': routable,
             'deploy_batches': batches,
             'deploy_timeout': deploy_timeout,
             'deployment_revision_history_limit': deployment_history,
             'release_summary': release.summary,
             'pod_termination_grace_period_seconds': pod_termination_grace_period_seconds,
+            'pod_termination_grace_period_each': config.termination_grace_period,
             'image_pull_secret_name': image_pull_secret_name,
             'image_pull_policy': image_pull_policy
         }

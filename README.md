@@ -1,10 +1,4 @@
 
-|![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/156px-Warning.svg.png) | Deis Workflow is no longer maintained.<br />Please [read the announcement](https://deis.com/blog/2017/deis-workflow-final-release/) for more detail. |
-|---:|---|
-| 09/07/2017 | Deis Workflow [v2.18][] final release before entering maintenance mode |
-| 03/01/2018 | End of Workflow maintenance: critical patches no longer merged |
-| | [Hephy](https://github.com/teamhephy/workflow) is a fork of Workflow that is actively developed and accepts code contributions. |
-
 # Deis Controller
 
 [![Build Status](https://ci.deis.io/job/controller/badge/icon)](https://ci.deis.io/job/controller)
@@ -14,7 +8,7 @@
 
 Deis (pronounced DAY-iss) Workflow is an open source Platform as a Service (PaaS) that adds a developer-friendly layer to any [Kubernetes](http://kubernetes.io) cluster, making it easy to deploy and manage applications on your own servers.
 
-For more information about the Deis Workflow, please visit the main project page at https://github.com/deis/workflow.
+For more information about the Deis Workflow, please visit the main project page at https://github.com/deisthree/workflow.
 
 We welcome your input! If you have feedback, please [submit an issue][issues]. If you'd like to participate in development, please read the "Development" section below and [submit a pull request][prs].
 
@@ -83,8 +77,8 @@ kubectl get pod --namespace=deis -w | grep deis-controller
 ```
 
 [install-k8s]: https://kubernetes.io/docs/setup/pick-right-solution
-[issues]: https://github.com/deis/controller/issues
-[prs]: https://github.com/deis/controller/pulls
-[workflow]: https://github.com/deis/workflow
+[issues]: https://github.com/deisthree/controller/issues
+[prs]: https://github.com/deisthree/controller/pulls
+[workflow]: https://github.com/deisthree/workflow
 [Docker]: https://www.docker.com/
-[v2.18]: https://github.com/deis/workflow/releases/tag/v2.18.0
+[v2.18]: https://github.com/deisthree/workflow/releases/tag/v2.18.0

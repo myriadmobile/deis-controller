@@ -35,6 +35,7 @@ def _mock_run(*args, **kwargs):
 @requests_mock.Mocker(real_http=True, adapter=adapter)
 @mock.patch('api.models.release.publish_release', lambda *args: None)
 @mock.patch('api.models.release.docker_get_port', mock_port)
+@mock.patch('api.models.release.docker_check_access', lambda *args: None)
 class AppTest(DeisTestCase):
     """Tests creation of applications"""
 
@@ -90,7 +91,8 @@ class AppTest(DeisTestCase):
         body = {'id': 'app-{}'.format(random.randrange(1000, 10000))}
         response = self.client.post('/v2/apps', body)
         for key in response.data:
-            self.assertIn(key, ['uuid', 'created', 'updated', 'id', 'owner', 'structure'])
+            self.assertIn(key, ['uuid', 'created', 'updated', 'id', 'owner', 'structure',
+                                'procfile_structure'])
         expected = {
             'id': body['id'],
             'owner': self.user.username,

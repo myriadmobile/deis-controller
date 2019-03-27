@@ -21,6 +21,7 @@ import requests_mock
 @requests_mock.Mocker(real_http=True, adapter=adapter)
 @mock.patch('api.models.release.publish_release', lambda *args: None)
 @mock.patch('api.models.release.docker_get_port', mock_port)
+@mock.patch('api.models.release.docker_check_access', lambda *args: None)
 class PodTest(DeisTransactionTestCase):
     """Tests creation of pods on nodes"""
 
@@ -322,10 +323,10 @@ class PodTest(DeisTransactionTestCase):
             self.assertIn(pod['type'], ['web', 'worker'])
             self.assertEqual(pod['release'], 'v2')
             # pod name is auto generated so use regex
-            self.assertRegex(pod['name'], app_id + '-(worker|web)-[0-9]{8,10}-[a-z0-9]{5}')
+            self.assertRegex(pod['name'], app_id + '-(worker|web)-[0-9]{7,10}-[a-z0-9]{5}')
 
     def test_pod_command_format(self, mock_requests):
-        # regression test for https://github.com/deis/deis/pull/1285
+        # regression test for https://github.com/deisthree/deis/pull/1285
         app_id = self.create_app()
 
         # post a new build
@@ -580,7 +581,7 @@ class PodTest(DeisTransactionTestCase):
 
     def test_run_not_fail_on_debug(self, mock_requests):
         """
-        do a run with DEIS_DEBUG on - https://github.com/deis/controller/issues/583
+        do a run with DEIS_DEBUG on - https://github.com/deisthree/controller/issues/583
         """
         env = EnvironmentVarGuard()
         env['DEIS_DEBUG'] = 'true'

@@ -18,10 +18,13 @@ class Config(UuidAuditedModel):
     app = models.ForeignKey('App', on_delete=models.CASCADE)
     values = JSONField(default={}, blank=True)
     memory = JSONField(default={}, blank=True)
+    lifecycle_post_start = JSONField(default={}, blank=True)
+    lifecycle_pre_stop = JSONField(default={}, blank=True)
     cpu = JSONField(default={}, blank=True)
     tags = JSONField(default={}, blank=True)
     registry = JSONField(default={}, blank=True)
     healthcheck = JSONField(default={}, blank=True)
+    termination_grace_period = JSONField(default={}, blank=True)
 
     class Meta:
         get_latest_by = 'created'
@@ -162,7 +165,9 @@ class Config(UuidAuditedModel):
                 # usually means a totally new app
                 previous_config = self.app.config_set.latest()
 
-            for attr in ['cpu', 'memory', 'tags', 'registry', 'values']:
+            for attr in ['cpu', 'memory', 'tags', 'registry', 'values',
+                         'lifecycle_post_start', 'lifecycle_pre_stop',
+                         'termination_grace_period']:
                 data = getattr(previous_config, attr, {}).copy()
                 new_data = getattr(self, attr, {}).copy()
 

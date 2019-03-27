@@ -130,7 +130,7 @@ class Pod(Resource):
         spec['nodeSelector'] = kwargs.get('tags', {})
 
         # How long until a pod is forcefully terminated. 30 is kubernetes default
-        spec['terminationGracePeriodSeconds'] = kwargs.get('pod_termination_grace_period_seconds', 30)  # noqa
+        spec['terminationGracePeriodSeconds'] = self._get_termination_grace_period(kwargs)  # noqa
 
         # Check if it is a slug builder image.
         if build_type == "buildpack":
@@ -224,6 +224,8 @@ class Pod(Resource):
 
         self._set_health_checks(data, env, **kwargs)
 
+        self._set_lifecycle_hooks(data, env, **kwargs)
+
     def _set_resources(self, container, kwargs):
         """ Set CPU/memory resource management manifest """
         app_type = kwargs.get("app_type")
@@ -253,6 +255,14 @@ class Pod(Resource):
             if resources:
                 container["resources"] = dict(resources)
 
+    def _get_termination_grace_period(self, kwargs):
+        """ return termination grace period """
+        app_type = kwargs.get("app_type")
+        timeout_global = kwargs.get('pod_termination_grace_period_seconds', 30)
+        timeout_local = kwargs.get("pod_termination_grace_period_each", {}).get(app_type)
+
+        return timeout_global if timeout_local is None else int(timeout_local)
+
     def _format_memory(self, mem):
         """ Format memory limit value """
         if mem[-2:-1].isalpha() and mem[-1].isalpha():
@@ -278,6 +288,38 @@ class Pod(Resource):
         elif kwargs.get('routable', False):
             self._default_readiness_probe(container, kwargs.get('build_type'), env.get('PORT', None))  # noqa
 
+    def _set_lifecycle_hooks(self, container, env, **kwargs):
+        app_type = kwargs.get("app_type")
+        lifecycle_post_start = kwargs.get('lifecycle_post_start', {})
+        lifecycle_post_start = lifecycle_post_start.get(app_type)
+        lifecycle_pre_stop = kwargs.get('lifecycle_pre_stop', {})
+        lifecycle_pre_stop = lifecycle_pre_stop.get(app_type)
+        lifecycle = defaultdict(dict)
+        if lifecycle_post_start or lifecycle_pre_stop:
+            lifecycle = defaultdict(dict)
+
+            if lifecycle_post_start:
+                lifecycle["postStart"] = {
+                        'exec': {
+                            "command": [
+                                "/bin/bash",
+                                "-c",
+                                "{0}".format(lifecycle_post_start)
+                            ]
+                        }
+                }
+            if lifecycle_pre_stop:
+                lifecycle["preStop"] = {
+                        'exec': {
+                            "command": [
+                                "/bin/bash",
+                                "-c",
+                                "{0}".format(lifecycle_pre_stop)
+                            ]
+                        }
+                }
+            container["lifecycle"] = dict(lifecycle)
+
     def _default_readiness_probe(self, container, build_type, port=None):
         # Update only the application container with the health check
         if build_type == "buildpack":
@@ -290,11 +332,11 @@ class Pod(Resource):
     http://kubernetes.io/docs/user-guide/pod-states/#container-probes
 
     /runner/init is the entry point of the slugrunner.
-    https://github.com/deis/slugrunner/blob/01eac53f1c5f1d1dfa7570bbd6b9e45c00441fea/rootfs/Dockerfile#L20
+    https://github.com/deisthree/slugrunner/blob/01eac53f1c5f1d1dfa7570bbd6b9e45c00441fea/rootfs/Dockerfile#L20
     Once it downloads the slug it starts running using `exec` which means the pid 1
     will point to the slug/application command instead of entry point once the application has
     started.
-    https://github.com/deis/slugrunner/blob/01eac53f1c5f1d1dfa7570bbd6b9e45c00441fea/rootfs/runner/init#L90
+    https://github.com/deisthree/slugrunner/blob/01eac53f1c5f1d1dfa7570bbd6b9e45c00441fea/rootfs/runner/init#L90
 
     This should be added only for the build pack apps when a custom liveness probe is not set to
     make sure that the pod is ready only when the slug is downloaded and started running.
@@ -344,6 +386,15 @@ class Pod(Resource):
             },
         }
         return readinessprobe
+
+    def _set_custom_termination_period(self, container, period_seconds=900):
+        """
+        Applies a custom terminationGracePeriod only if provided as env variable.
+        """
+        terminationperiod = {
+            'terminationGracePeriodSeconds': int(period_seconds)
+        }
+        container.update(terminationperiod)
 
     def delete(self, namespace, name):
         # get timeout info from pod

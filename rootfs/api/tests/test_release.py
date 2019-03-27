@@ -21,6 +21,7 @@ import requests_mock
 @requests_mock.Mocker(real_http=True, adapter=adapter)
 @mock.patch('api.models.release.publish_release', lambda *args: None)
 @mock.patch('api.models.release.docker_get_port', mock_port)
+@mock.patch('api.models.release.docker_check_access', lambda *args: None)
 class ReleaseTest(DeisTransactionTestCase):
 
     """Tests push notification from build system"""
@@ -114,7 +115,7 @@ class ReleaseTest(DeisTransactionTestCase):
         response = self.client.get(url)
         for key in response.data.keys():
             self.assertIn(key, ['uuid', 'owner', 'created', 'updated', 'app', 'build', 'config',
-                                'summary', 'version', 'failed'])
+                                'summary', 'version', 'failed', 'exception'])
         expected = {
             'owner': self.user.username,
             'app': app_id,

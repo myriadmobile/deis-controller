@@ -21,6 +21,7 @@ import requests_mock
 @requests_mock.Mocker(real_http=True, adapter=adapter)
 @mock.patch('api.models.release.publish_release', lambda *args: None)
 @mock.patch('api.models.release.docker_get_port', mock_port)
+@mock.patch('api.models.release.docker_check_access', lambda *args: None)
 class ConfigTest(DeisTransactionTestCase):
     """Tests setting and updating config values"""
 
@@ -165,7 +166,8 @@ class ConfigTest(DeisTransactionTestCase):
         response = self.client.post(url, body)
         for key in response.data:
             self.assertIn(key, ['uuid', 'owner', 'created', 'updated', 'app', 'values', 'memory',
-                                'cpu', 'tags', 'registry', 'healthcheck'])
+                                'cpu', 'tags', 'registry', 'healthcheck', 'lifecycle_post_start',
+                                'lifecycle_pre_stop', 'termination_grace_period'])
         expected = {
             'owner': self.user.username,
             'app': app_id,
@@ -188,7 +190,8 @@ class ConfigTest(DeisTransactionTestCase):
         self.assertEqual(response.status_code, 201, response.data)
         for key in response.data:
             self.assertIn(key, ['uuid', 'owner', 'created', 'updated', 'app', 'values', 'memory',
-                                'cpu', 'tags', 'registry', 'healthcheck'])
+                                'cpu', 'tags', 'registry', 'healthcheck', 'lifecycle_post_start',
+                                'lifecycle_pre_stop', 'termination_grace_period'])
         expected = {
             'owner': self.user.username,
             'app': app_id,
@@ -340,7 +343,7 @@ class ConfigTest(DeisTransactionTestCase):
     def test_config_owner_is_requesting_user(self, mock_requests):
         """
         Ensure that setting the config value is owned by the requesting user
-        See https://github.com/deis/deis/issues/2650
+        See https://github.com/deisthree/deis/issues/2650
         """
         response = self.test_admin_can_create_config_on_other_apps()
         self.assertEqual(response.data['owner'], self.user.username)
