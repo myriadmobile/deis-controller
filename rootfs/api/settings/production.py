@@ -264,6 +264,10 @@ BUILDER_KEY = os.environ.get('DEIS_BUILDER_KEY', random_secret)
 EXPERIMENTAL_NATIVE_INGRESS = bool(strtobool(
     os.environ.get('EXPERIMENTAL_NATIVE_INGRESS', 'false')))
 EXPERIMENTAL_NATIVE_INGRESS_HOSTNAME = os.environ.get('EXPERIMENTAL_NATIVE_INGRESS_HOSTNAME', '')
+# Put annotations in a string format
+EXPERIMENTAL_NATIVE_INGRESS_ANNOTATIONS = os.environ.get('EXPERIMENTAL_NATIVE_INGRESS_ANNOTATIONS', '')
+# Provide an optional divider so that if an annotation has a comma they can be split with ; instead
+EXPERIMENTAL_NATIVE_INGRESS_ANNOTATIONS_DIVIDER = os.environ.get('EXPERIMENTAL_NATIVE_INGRESS_ANNOTATIONS_DIVIDER', ',')
 
 # k8s image policies
 SLUGRUNNER_IMAGE = os.environ.get('SLUGRUNNER_IMAGE_NAME', 'quay.io/deisci/slugrunner:canary')  # noqa
