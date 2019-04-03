@@ -22,14 +22,15 @@ class Ingress(Resource):
 
         return response
 
-    def create(self, ingress, namespace, hostname):
+    def create(self, ingress, namespace, hostname, annotations={}, tls=False):
         url = "/apis/extensions/v1beta1/namespaces/%s/ingresses" % namespace
 
         data = {
             "kind": "Ingress",
             "apiVersion": "extensions/v1beta1",
             "metadata": {
-                "name": ingress
+                "name": ingress,
+                "annotations": annotations
             },
             "spec": {
                 "rules": [

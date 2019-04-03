@@ -28,15 +28,18 @@ class IngressTest(TestCase):
         ):
             self.scheduler.ingress.get('doesnotexist')
 
+        testAnnotations = {"a": "b"}
         self.scheduler.ns.create("test-ingress-create")
         self.scheduler.ingress.create("test-ingress-create",
-                                      "test-ingress-create", "test-ingress-create")
+                                      "test-ingress-create", "test-ingress-create",
+                                      annotations=testAnnotations)
         response = self.scheduler.ingress.get("test-ingress-create")
         data = response.json()
 
         self.assertEqual(response.status_code, 200, data)
         self.assertEqual(data['apiVersion'], 'extensions/v1beta1')
         self.assertEqual(data['kind'], 'Ingress')
+        self.assertEqual(data['metadata']['annotations'], testAnnotations)
 
     def test_delete_failure(self):
         # test failure
